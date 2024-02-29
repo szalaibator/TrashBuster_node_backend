@@ -1,7 +1,5 @@
 import { Schema } from "mongoose";
 
-import IAddress from "./address.interface";
-
 export default interface IUser {
     _id?: Schema.Types.ObjectId;
     name: string;
@@ -11,5 +9,4 @@ export default interface IUser {
     picture: string;
     password: string;
     roles?: string[];
-    address?: IAddress;
 }

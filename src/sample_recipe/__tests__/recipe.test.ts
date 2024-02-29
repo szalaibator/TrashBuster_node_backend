@@ -2,7 +2,7 @@ import request from "supertest";
 
 import App from "../../app";
 import AuthenticationController from "../../authentication/authentication.controller";
-import RecipeController from "../../recipe/recipe.controller";
+import RecipeController from "../../sample_recipe/recipe.controller";
 
 // let server: Express.Application;
 let cookie: string | any;

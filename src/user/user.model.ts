@@ -1,16 +1,7 @@
 import { model, Schema } from "mongoose";
 
-import IAddress from "./address.interface";
 import IUser from "./user.interface";
 
-const addressSchema = new Schema<IAddress>(
-    {
-        city: String,
-        country: String,
-        street: String,
-    },
-    { versionKey: false, id: false, toJSON: { virtuals: true }, toObject: { virtuals: true } },
-);
 
 const userSchema = new Schema<IUser>(
     {
@@ -43,7 +34,6 @@ const userSchema = new Schema<IUser>(
             type: [String], // Array of string
             required: true,
         },
-        address: addressSchema,
     },
     { versionKey: false, id: false, toJSON: { virtuals: true }, toObject: { virtuals: true } },
 );

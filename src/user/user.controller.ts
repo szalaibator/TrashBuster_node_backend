@@ -2,7 +2,7 @@ import { NextFunction, Request, Response, Router } from "express";
 import ISession from "interfaces/session.interface";
 import { Types } from "mongoose";
 
-import authorModel from "../author/author.model";
+import authorModel from "../sample_author/author.model";
 import HttpException from "../exceptions/HttpException";
 import IdNotValidException from "../exceptions/IdNotValidException";
 import UserNotFoundException from "../exceptions/UserNotFoundException";
@@ -10,7 +10,7 @@ import IController from "../interfaces/controller.interface";
 import IRequestWithUser from "../interfaces/requestWithUser.interface";
 import authMiddleware from "../middleware/auth.middleware";
 import validationMiddleware from "../middleware/validation.middleware";
-import postModel from "../post/post.model";
+import postModel from "../sample_post/post.model";
 import CreateUserDto from "./user.dto";
 import IUser from "./user.interface";
 import userModel from "./user.model";

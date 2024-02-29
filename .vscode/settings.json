@@ -41,5 +41,6 @@
     "vscode-edge-devtools.webhint": false,
     "[json]": {
         "editor.defaultFormatter": "vscode.json-language-features"
-    }
+    },
+    "editor.mouseWheelZoom": true
 }
