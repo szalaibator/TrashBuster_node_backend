@@ -2,7 +2,6 @@ import { model, Schema } from "mongoose";
 
 import IUser from "./user.interface";
 
-
 const userSchema = new Schema<IUser>(
     {
         // _id: Schema.Types.ObjectId,
@@ -10,19 +9,15 @@ const userSchema = new Schema<IUser>(
             type: String,
             required: true,
         },
-        email_verified: {
+        isVerified: {
             type: Boolean,
             required: true,
         },
-        auto_login: {
-            type: Boolean,
-            required: true,
-        },
-        name: {
+        username: {
             type: String,
             required: true,
         },
-        picture: {
+        profilePictureURL: {
             type: String,
             required: true,
         },
@@ -34,6 +29,10 @@ const userSchema = new Schema<IUser>(
             type: [String], // Array of string
             required: true,
         },
+        verificationToken: {
+            type: String,
+            required: true
+        }
     },
     { versionKey: false, id: false, toJSON: { virtuals: true }, toObject: { virtuals: true } },
 );

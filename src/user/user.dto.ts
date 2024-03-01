@@ -9,7 +9,10 @@ export default class CreateUserDto implements IUser {
     public _id: Schema.Types.ObjectId;
 
     @IsString()
-    public name: string;
+    public username: string;
+
+    @IsString()
+    public verificationToken: string;
 
     @IsEmail()
     public email: string;
@@ -20,13 +23,10 @@ export default class CreateUserDto implements IUser {
     // public email_address_confirm: string;
 
     @IsBoolean()
-    public email_verified: boolean;
-
-    @IsBoolean()
-    public auto_login: boolean;
+    public isVerified: boolean;
 
     @IsString()
-    public picture: string;
+    public profilePictureURL: string;
 
     @IsString()
     public password: string;
