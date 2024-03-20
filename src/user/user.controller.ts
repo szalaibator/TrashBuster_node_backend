@@ -1,6 +1,7 @@
 import { NextFunction, Request, Response, Router } from "express";
 import ISession from "interfaces/session.interface";
 import { Types } from "mongoose";
+import Cache from 'Cache';
 
 import authorModel from "../sample_author/author.model";
 import HttpException from "../exceptions/HttpException";
@@ -27,136 +28,183 @@ export default class UserController implements IController {
     }
 
     private initializeRoutes() {
-        this.router.get(`${this.path}/posts/:id`, authMiddleware, this.getAllPostsOfUserByID);
-        this.router.get(`${this.path}/posts/`, authMiddleware, this.getAllPostsOfLoggedUser);
-        this.router.get(`${this.path}/:id`, authMiddleware, this.getUserById);
-        this.router.get(this.path, authMiddleware, this.getAllUsers);
-        this.router.get(`${this.path}/posts/search/:keyword`, this.getUsersPostsWithSearch);
+        this.router.get(`${this.path}/username/{username}`, authMiddleware, this.getUserByUsername);
+        this.router.get(`${this.path}'/verify-deletion-code`, authMiddleware, this.verifyDeletion);
+        // this.router.get(`${this.path}/:id`, authMiddleware, this.getUserById);
+        // this.router.get(this.path, authMiddleware, this.getAllUsers);
+        // this.router.get(`${this.path}/posts/search/:keyword`, this.getUsersPostsWithSearch);
 
-        this.router.patch(`${this.path}/:id`, [authMiddleware, validationMiddleware(CreateUserDto, true)], this.modifyUser);
+        // this.router.patch(`${this.path}/:id`, [authMiddleware, validationMiddleware(CreateUserDto, true)], this.modifyUser);
 
-        this.router.delete(`${this.path}/:id`, authMiddleware, this.deleteUser);
+        // this.router.delete(`${this.path}/:id`, authMiddleware, this.deleteUser);
     }
 
-    private getAllUsers = async (req: Request, res: Response, next: NextFunction) => {
-        try {
-            this.user.find().then(users => {
-                res.send(users);
-            });
-        } catch (error) {
-            next(new HttpException(400, error.message));
-        }
-    };
+    // private getAllUsers = async (req: Request, res: Response, next: NextFunction) => {
+    //     try {
+    //         this.user.find().then(users => {
+    //             res.send(users);
+    //         });
+    //     } catch (error) {
+    //         next(new HttpException(400, error.message));
+    //     }
+    // };
 
-    private getUserById = async (req: Request, res: Response, next: NextFunction) => {
+    // private getUserById = async (req: Request, res: Response, next: NextFunction) => {
+    //     try {
+    //         const id = req.params.id;
+    //         if (Types.ObjectId.isValid(id)) {
+    //             // const userQuery = this.user.findById(id);
+    //             // if (request.query.withPosts === "true") {
+    //             //     userQuery.populate("posts").exec();
+    //             // }
+
+    //             // Multiple populates:
+    //             const user = await this.user.findById(id).populate("posts").populate("recipes");
+    //             if (user) {
+    //                 res.send(user);
+    //             } else {
+    //                 next(new UserNotFoundException(id));
+    //             }
+    //         } else {
+    //             next(new IdNotValidException(id));
+    //         }
+    //     } catch (error) {
+    //         next(new HttpException(400, error.message));
+    //     }
+    // };
+
+    private getUserByUsername = async (req: Request, res: Response, next: NextFunction) => {
         try {
-            const id = req.params.id;
-            if (Types.ObjectId.isValid(id)) {
+            const username = req.params.username;
+            if (Types.ObjectId.isValid(username)) {
                 // const userQuery = this.user.findById(id);
                 // if (request.query.withPosts === "true") {
                 //     userQuery.populate("posts").exec();
                 // }
 
                 // Multiple populates:
-                const user = await this.user.findById(id).populate("posts").populate("recipes");
+                const user = await this.user.findById(username).populate("posts").populate("recipes");
                 if (user) {
                     res.send(user);
                 } else {
-                    next(new UserNotFoundException(id));
+                    next(new UserNotFoundException(username));
                 }
             } else {
-                next(new IdNotValidException(id));
+                next(new IdNotValidException(username));
             }
         } catch (error) {
             next(new HttpException(400, error.message));
         }
     };
 
-    private modifyUser = async (req: Request, res: Response, next: NextFunction) => {
+    private verifyDeletion(request: Request, response: Response) {
+        const userId: string = request.body.userId;
+        const enteredCode: string = request.body.enteredCode;
+    
         try {
-            const id = req.params.id;
-            if (Types.ObjectId.isValid(id)) {
-                const userData: IUser = req.body;
-                const user = await this.user.findByIdAndUpdate(id, userData, { new: true });
-                if (user) {
-                    res.send(user);
-                } else {
-                    next(new UserNotFoundException(id));
-                }
+            const user = this.user.findById(userId);
+    
+            if (!user) {
+                response.status(404).json({ message: 'Nincs ilyen felhasználó' });
+            }
+    
+            const storedCode: any = Cache.get('deletion_code_' + user.findById);
+    
+            if (enteredCode === storedCode) {
+                response.status(200).json({ message: 'A kód helyes!' });
             } else {
-                next(new IdNotValidException(id));
+                response.status(400).json({ message: 'A megadott kód nem megfelelő!' });
             }
         } catch (error) {
-            next(new HttpException(400, error.message));
+            response.status(500).json({ message: 'Hiba történt a szerveren' });
         }
-    };
+    }
 
-    private deleteUser = async (req: Request, res: Response, next: NextFunction) => {
-        try {
-            const id = req.params.id;
-            if (Types.ObjectId.isValid(id)) {
-                const successResponse = await this.user.findByIdAndDelete(id);
-                if (successResponse) {
-                    res.sendStatus(200);
-                } else {
-                    next(new UserNotFoundException(id));
-                }
-            } else {
-                next(new IdNotValidException(id));
-            }
-        } catch (error) {
-            next(new HttpException(400, error.message));
-        }
-    };
+    // private modifyUser = async (req: Request, res: Response, next: NextFunction) => {
+    //     try {
+    //         const id = req.params.id;
+    //         if (Types.ObjectId.isValid(id)) {
+    //             const userData: IUser = req.body;
+    //             const user = await this.user.findByIdAndUpdate(id, userData, { new: true });
+    //             if (user) {
+    //                 res.send(user);
+    //             } else {
+    //                 next(new UserNotFoundException(id));
+    //             }
+    //         } else {
+    //             next(new IdNotValidException(id));
+    //         }
+    //     } catch (error) {
+    //         next(new HttpException(400, error.message));
+    //     }
+    // };
 
-    private getAllPostsOfLoggedUser = async (req: IRequestWithUser, res: Response, next: NextFunction) => {
-        try {
-            const id = (req.session as ISession).user_id; // Stored user's ID in Cookie
-            const posts = await this.post.find({ user_id: id });
-            res.send(posts);
-        } catch (error) {
-            next(new HttpException(400, error.message));
-        }
-    };
+    // private deleteUser = async (req: Request, res: Response, next: NextFunction) => {
+    //     try {
+    //         const id = req.params.id;
+    //         if (Types.ObjectId.isValid(id)) {
+    //             const successResponse = await this.user.findByIdAndDelete(id);
+    //             if (successResponse) {
+    //                 res.sendStatus(200);
+    //             } else {
+    //                 next(new UserNotFoundException(id));
+    //             }
+    //         } else {
+    //             next(new IdNotValidException(id));
+    //         }
+    //     } catch (error) {
+    //         next(new HttpException(400, error.message));
+    //     }
+    // };
 
-    private getAllPostsOfUserByID = async (req: Request, res: Response, next: NextFunction) => {
-        try {
-            if (Types.ObjectId.isValid(req.params.id)) {
-                const id: string = req.params.id;
-                const posts = await this.author.find({ user_id: id }).select("-user_id").populate("post", "-_id");
-                res.send(posts);
-            } else {
-                next(new IdNotValidException(req.params.id));
-            }
-        } catch (error) {
-            next(new HttpException(400, error.message));
-        }
-    };
+    // private getAllPostsOfLoggedUser = async (req: IRequestWithUser, res: Response, next: NextFunction) => {
+    //     try {
+    //         const id = (req.session as ISession).user_id; // Stored user's ID in Cookie
+    //         const posts = await this.post.find({ user_id: id });
+    //         res.send(posts);
+    //     } catch (error) {
+    //         next(new HttpException(400, error.message));
+    //     }
+    // };
 
-    private getUsersPostsWithSearch = async (req: Request, res: Response, next: NextFunction) => {
-        try {
-            const myRegex = new RegExp(req.params.keyword, "i"); // "i" for case-insensitive
+    // private getAllPostsOfUserByID = async (req: Request, res: Response, next: NextFunction) => {
+    //     try {
+    //         if (Types.ObjectId.isValid(req.params.id)) {
+    //             const id: string = req.params.id;
+    //             const posts = await this.author.find({ user_id: id }).select("-user_id").populate("post", "-_id");
+    //             res.send(posts);
+    //         } else {
+    //             next(new IdNotValidException(req.params.id));
+    //         }
+    //     } catch (error) {
+    //         next(new HttpException(400, error.message));
+    //     }
+    // };
 
-            const data = await this.user.aggregate([
-                {
-                    $lookup: { from: "authors", foreignField: "user_id", localField: "_id", as: "author" },
-                },
-                {
-                    $lookup: { from: "posts", foreignField: "_id", localField: "author.post_id", as: "post" },
-                },
-                {
-                    $match: { $and: [{ "address.street": myRegex }, { "post.content": myRegex }] },
-                    // $match: { "FK_neve.field1": req.params.keyword },
-                },
-                // {
-                //     // convert array of objects to simple array (alias name):
-                //     $unwind: "$FK_neve",
-                // },
-                { $project: { name: 1, "address.street": 1, post: 1 } },
-            ]);
-            res.send(data);
-        } catch (error) {
-            next(new HttpException(400, error.message));
-        }
-    };
+    // private getUsersPostsWithSearch = async (req: Request, res: Response, next: NextFunction) => {
+    //     try {
+    //         const myRegex = new RegExp(req.params.keyword, "i"); // "i" for case-insensitive
+
+    //         const data = await this.user.aggregate([
+    //             {
+    //                 $lookup: { from: "authors", foreignField: "user_id", localField: "_id", as: "author" },
+    //             },
+    //             {
+    //                 $lookup: { from: "posts", foreignField: "_id", localField: "author.post_id", as: "post" },
+    //             },
+    //             {
+    //                 $match: { $and: [{ "address.street": myRegex }, { "post.content": myRegex }] },
+    //                 // $match: { "FK_neve.field1": req.params.keyword },
+    //             },
+    //             // {
+    //             //     // convert array of objects to simple array (alias name):
+    //             //     $unwind: "$FK_neve",
+    //             // },
+    //             { $project: { name: 1, "address.street": 1, post: 1 } },
+    //         ]);
+    //         res.send(data);
+    //     } catch (error) {
+    //         next(new HttpException(400, error.message));
+    //     }
+    // };
 }
